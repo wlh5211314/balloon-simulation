@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>气球模拟实验</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        #sky {
+            height: 80%;
+            width: 100%;
+            position: relative;
+            border: 1px solid #ccc;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        
+        .balloon {
+            position: absolute;
+            border-radius: 50%;
+            bottom: 50px;
+            transition: transform 0.2s;
+        }
+        
+        .burst {
+            animation: burst 0.5s forwards;
+        }
+        
+        @keyframes burst {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>气球模拟实验</h1>
+    
+    <div id="sky"></div>
+    
+    <div class="controls">
+        <button id="addBalloon">添加气球</button>
+        <button id="startRising">开始上升</button>
+    </div>
+    
+    <script>
+        const sky = document.getElementById('sky');
+        const addBalloonBtn = document.getElementById('addBalloon');
+        const startRisingBtn = document.getElementById('startRising');
+        
+        const colors = ['red', 'orange', 'yellow', 'green', 'black', 'blue', 'purple'];
+        const balloons = [];
+        let rising = false;
+        const burstHeight = 300; // 气球会在这个高度破裂
+        
+        class Balloon {
+            constructor() {
+                this.element = document.createElement('div');
+                this.element.className = 'balloon';
+                
+                // 随机属性
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.size = Math.floor(Math.random() * 30) + 30; // 30-60px
+                this.speed = Math.random() * 2 + 1; // 1-3px/帧
+                this.growthRate = Math.random() * 0.2 + 0.1; // 0.1-0.3px/帧
+                
+                // 初始位置
+                this.x = Math.random() * (sky.offsetWidth - this.size);
+                this.y = sky.offsetHeight - this.size - 50;
+                
+                // 设置样式
+                this.element.style.width = `${this.size}px`;
+                this.element.style.height = `${this.size}px`;
+                this.element.style.backgroundColor = this.color;
+                this.element.style.left = `${this.x}px`;
+                this.element.style.bottom = `${this.y}px`;
+                
+                sky.appendChild(this.element);
+            }
+            
+            rise() {
+                if (this.burst) return;
+                
+                // 上升
+                this.y -= this.speed;
+                
+                // 膨胀
+                this.size += this.growthRate;
+                
+                // 更新位置和大小
+                this.element.style.bottom = `${this.y}px`;
+                this.element.style.width = `${this.size}px`;
+                this.element.style.height = `${this.size}px`;
+                
+                // 检查是否达到破裂高度
+                if (this.y <= burstHeight && !this.burst) {
+                    this.burst = true;
+                    setTimeout(() => {
+                        this.element.classList.add('burst');
+                        setTimeout(() => {
+                            sky.removeChild(this.element);
+                        }, 500);
+                    }, Math.random() * 2000); // 随机延迟0-2秒破裂
+                }
+            }
+        }
+        
+        // 添加气球
+        addBalloonBtn.addEventListener('click', () => {
+            balloons.push(new Balloon());
+        });
+        
+        // 开始上升
+        startRisingBtn.addEventListener('click', () => {
+            if (rising) return;
+            rising = true;
+            
+            function animate() {
+                balloons.forEach(balloon => balloon.rise());
+                
+                // 移除已破裂的气球
+                for (let i = balloons.length - 1; i >= 0; i--) {
+                    if (balloons[i].burst) {
+                        balloons.splice(i, 1);
+                    }
+                }
+                
+                if (balloons.length > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    rising = false;
+                }
+            }
+            
+            animate();
+        });
+        
+        // 初始添加3个气球
+        for (let i = 0; i < 3; i++) {
+            balloons.push(new Balloon());
+        }
+    </script>
+</body>
+</html>
